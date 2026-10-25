@@ -313,7 +313,7 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def end_headers(self):
-        if self.path.split("?")[0] == "/sw.js":
+        if not self.path.startswith("/api/"):
             self.send_header("Cache-Control", "no-cache")
         super().end_headers()
 

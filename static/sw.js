@@ -1,4 +1,4 @@
-const CACHE = 'room-finder-v3';
+const CACHE = 'room-finder-v4';
 const SHELL = ['/', '/style.css', '/app.js', '/manifest.json', '/icon.svg', '/icon-192.png', '/badge-96.png'];
 
 self.addEventListener('install', (event) => {
@@ -19,7 +19,7 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
   event.respondWith((async () => {
     try {
-      const res = await fetch(event.request);
+      const res = await fetch(event.request, { cache: 'no-cache' });
       if (res.ok) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(event.request.mode === 'navigate' ? '/' : event.request, copy));
