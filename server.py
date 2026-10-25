@@ -41,7 +41,7 @@ SUBSCRIPTIONS_FILE = os.path.join(os.environ.get("DATA_DIR", os.path.join(BASE_D
 KEEP_AWAKE_URL = os.environ.get("KEEP_AWAKE_URL", "")
 MAX_SUBSCRIPTIONS = 5000
 MAX_BODY = 8192
-PUSH_HOSTS = ("fcm.googleapis.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com")
+PUSH_HOSTS = ("fcm.googleapis.com", "jmt17.google.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com")
 
 _cache = {}
 _cache_lock = threading.Lock()

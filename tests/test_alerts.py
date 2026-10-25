@@ -67,6 +67,7 @@ class CheckAlertsTest(unittest.TestCase):
     def test_validates_push_endpoints(self):
         self.assertTrue(server.valid_subscription(self.sub))
         self.assertTrue(server.valid_subscription({**self.sub, "endpoint": "https://web.push.apple.com/abc"}))
+        self.assertTrue(server.valid_subscription({**self.sub, "endpoint": "https://jmt17.google.com/fcm/send/abc"}))
         self.assertFalse(server.valid_subscription({**self.sub, "endpoint": "https://evil.example.com/x"}))
         self.assertFalse(server.valid_subscription({**self.sub, "endpoint": "http://fcm.googleapis.com/x"}))
 
