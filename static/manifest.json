@@ -1,0 +1,9 @@
+{
+  "name": "UB Heidelberg Room Finder",
+  "short_name": "Room Finder",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#9b0d2a",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

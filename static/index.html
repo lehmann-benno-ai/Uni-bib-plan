@@ -2,57 +2,101 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>UB Heidelberg – Free Group Study Rooms</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#9b0d2a">
+  <title>UB Heidelberg Room Finder</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>UB Heidelberg <span>Free group study rooms</span></h1>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="brand">
+        <img class="logo" src="icon.svg" alt="">
+        <div>
+          <h1>Room Finder</h1>
+          <p>Group study rooms · UB Heidelberg</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <div class="clock"><span class="pulse"></span><span id="clock">--:--</span></div>
+        <button id="notify-btn" class="bell" aria-expanded="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+          <span id="notify-label">Notify me</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="seg" id="building" role="tablist">
+        <button data-building="Altstadt">Altstadt</button>
+        <button data-building="Neuenheim">Neuenheim</button>
+      </div>
+      <div class="chips" id="dates"></div>
+    </div>
   </header>
 
   <main>
-    <section class="controls">
-      <div class="seg" id="building">
-        <button data-building="Altstadt" class="active">Altstadt</button>
-        <button data-building="Neuenheim">Neuenheim</button>
+    <section id="notify-panel" class="card panel" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Room alerts</h2>
+          <p class="muted">Get a notification when a room becomes free in the next 10 minutes. Keep this page open (or install it to your home screen).</p>
+        </div>
+        <button id="notify-toggle" class="btn primary">Turn on</button>
       </div>
-      <label>Date <input type="date" id="date"></label>
-      <label>I need
-        <select id="duration">
-          <option value="0">any time</option>
-          <option value="1">30 min</option>
-          <option value="2">1 h</option>
-          <option value="3">1.5 h</option>
-          <option value="4">2 h</option>
-          <option value="5">2.5 h</option>
-          <option value="6">3 h</option>
-        </select>
-      </label>
-      <a id="book" class="btn" target="_blank" rel="noopener">Book on UB site ↗</a>
+      <div class="panel-body">
+        <div class="field">
+          <span class="label">Buildings</span>
+          <label class="check"><input type="checkbox" value="Altstadt" name="watch-building"> Altstadt</label>
+          <label class="check"><input type="checkbox" value="Neuenheim" name="watch-building"> Neuenheim</label>
+        </div>
+        <div class="field">
+          <span class="label">Free for at least</span>
+          <div class="chips small" id="watch-duration"></div>
+        </div>
+      </div>
     </section>
 
-    <section id="now" class="card" hidden>
-      <h2>Free right now</h2>
-      <ul id="now-list"></ul>
+    <section class="stats" id="stats"></section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Rooms</h2>
+        <div class="filter">
+          <span class="muted">I need</span>
+          <div class="chips small" id="duration"></div>
+        </div>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="rooms" class="room-grid"></div>
     </section>
 
-    <section class="card">
-      <div class="legend">
-        <span><i class="free"></i>free</span>
-        <span><i class="pending"></i>pre-booked (unconfirmed)</span>
-        <span><i class="booked"></i>booked</span>
-        <span><i class="closed"></i>closed</span>
-        <span><i class="fits"></i>fits your duration</span>
+    <section class="section">
+      <div class="section-head">
+        <h2>Timeline</h2>
+        <div class="legend">
+          <span><i class="free"></i>Free</span>
+          <span><i class="pending"></i>Pre-booked</span>
+          <span><i class="booked"></i>Booked</span>
+          <span><i class="closed"></i>Closed</span>
+        </div>
       </div>
-      <div id="status"></div>
-      <div class="grid-wrap"><table id="grid"></table></div>
+      <div class="card grid-card"><div class="grid-wrap"><table id="grid"></table></div></div>
     </section>
   </main>
 
   <footer>
-    Data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg room reservation system</a>, refreshed every minute. Unofficial site.
+    Live data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg reservation system</a>, refreshed every minute.
+    Unofficial project — book on the <a id="book-footer" href="https://www.ub.uni-heidelberg.de/raumres/" target="_blank" rel="noopener">official site</a>.
   </footer>
+
+  <div id="toasts" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>
