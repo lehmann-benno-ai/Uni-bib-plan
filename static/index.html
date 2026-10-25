@@ -48,7 +48,11 @@
         <button data-building="Altstadt">Altstadt</button>
         <button data-building="Neuenheim">Neuenheim</button>
       </div>
-      <div class="chips" id="dates" role="group" aria-label="Day"></div>
+      <div class="days">
+        <button class="day-arrow" id="days-prev" type="button" aria-label="Show earlier days" aria-controls="dates"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.7 5.3a1 1 0 0 1 0 1.4L10.4 12l5.3 5.3a1 1 0 0 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0Z"/></svg></button>
+        <div class="chips" id="dates" role="group" aria-label="Day (swipe for more days)"></div>
+        <button class="day-arrow" id="days-next" type="button" aria-label="Show later days" aria-controls="dates"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8.3 5.3a1 1 0 0 1 1.4 0l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.4-1.4l5.3-5.3-5.3-5.3a1 1 0 0 1 0-1.4Z"/></svg></button>
+      </div>
     </div>
   </header>
 

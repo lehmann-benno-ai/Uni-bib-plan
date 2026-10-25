@@ -134,7 +134,27 @@ function renderDates() {
     b.onclick = () => { state.date = d; state.announce = true; renderDates(); el.querySelector('.active')?.focus(); load(); };
     el.appendChild(b);
   }
-  el.querySelector('.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  const a = el.querySelector('.active');
+  if (a) el.scrollTo({ left: Math.max(0, a.offsetLeft - el.offsetLeft - 24), behavior: 'auto' });
+  updateDayArrows();
+}
+
+function updateDayArrows() {
+  const el = $('#dates');
+  const max = el.scrollWidth - el.clientWidth - 1;
+  el.classList.toggle('at-start', el.scrollLeft <= 1);
+  el.classList.toggle('at-end', el.scrollLeft >= max);
+  $('#days-prev').disabled = el.scrollLeft <= 1;
+  $('#days-next').disabled = el.scrollLeft >= max;
+}
+
+function initDayStrip() {
+  const el = $('#dates');
+  const page = (dir) => el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  $('#days-prev').onclick = () => page(-1);
+  $('#days-next').onclick = () => page(1);
+  el.addEventListener('scroll', updateDayArrows, { passive: true });
+  addEventListener('resize', updateDayArrows);
 }
 
 function renderChips(el, value, onPick) {
@@ -486,6 +506,7 @@ function tick() {
 function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+  initDayStrip();
   renderDates();
   const pickDuration = (v) => {
     state.duration = v;

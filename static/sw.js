@@ -1,4 +1,4 @@
-const CACHE = 'room-finder-v2';
+const CACHE = 'room-finder-v3';
 const SHELL = ['/', '/style.css', '/app.js', '/manifest.json', '/icon.svg', '/icon-192.png', '/badge-96.png'];
 
 self.addEventListener('install', (event) => {

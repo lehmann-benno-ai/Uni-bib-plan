@@ -47,7 +47,7 @@
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-html, body { overflow-x: hidden; }
+html, body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-width: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -104,9 +104,25 @@ legend { padding: 0; float: left; margin-right: 10px; }
 .seg button { border: 0; background: transparent; color: #fff; padding: 8px 16px; border-radius: 999px; font-weight: 600; opacity: .85; }
 .seg button.active { background: #fff; color: var(--accent-2); opacity: 1; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
 
-.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.chips .chip { scroll-snap-align: start; }
+.days { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; max-width: 100%; }
+.days .chips {
+  flex: 1; min-width: 0; scroll-padding-inline: 24px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+}
+.days .chips.at-start { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent 100%); }
+.days .chips.at-end { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px); mask-image: linear-gradient(90deg, transparent 0, #000 22px); }
+.days .chips.at-start.at-end { -webkit-mask-image: none; mask-image: none; }
+.day-arrow {
+  flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .14); color: #fff; padding: 0;
+}
+.day-arrow svg { width: 18px; height: 18px; fill: currentColor; }
+.day-arrow:disabled { opacity: .4; cursor: default; }
 .chips::-webkit-scrollbar { display: none; }
-.hero .chips { flex: 1; min-width: 0; }
+.hero .chips { min-width: 0; }
 .chip {
   flex: none; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .1);
   color: #fff; padding: 7px 13px; border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap;
@@ -176,8 +192,9 @@ main { padding: 20px 16px 8px; }
 .legend i.closed, td.closed { background: var(--closed); }
 td.unknown { background: var(--surface-2); }
 td.free.dim { opacity: .3; }
-.grid-card { padding: 8px; }
-.grid-wrap { overflow: auto; max-height: 70vh; border-radius: 12px; }
+.grid-card { padding: 8px; min-width: 0; max-width: 100%; }
+.section { min-width: 0; }
+.grid-wrap { overflow: auto; max-height: 70vh; border-radius: 12px; max-width: 100%; overscroll-behavior-x: contain; }
 table { border-collapse: separate; border-spacing: 3px; font-size: .78rem; }
 th { position: sticky; top: 0; background: var(--surface); padding: 6px 4px; white-space: nowrap; z-index: 1; font-weight: 700; }
 th.time, td.time, th[scope="row"] { position: sticky; left: 0; background: var(--surface); text-align: right; padding-right: 10px; color: var(--muted); font-variant-numeric: tabular-nums; z-index: 2; }
