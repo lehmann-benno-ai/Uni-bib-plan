@@ -50,7 +50,7 @@ const state = {
 };
 
 const notify = Object.assign(
-  { enabled: false, buildings: [state.building], minSlots: 0 },
+  { enabled: false, mode: 'page', buildings: [state.building], minSlots: 0 },
   JSON.parse(localStorage.getItem('notify') || '{}'),
 );
 const saveNotify = () => localStorage.setItem('notify', JSON.stringify(notify));
@@ -320,7 +320,7 @@ function toast(title, body) {
 async function sendNotification(title, body, tag) {
   toast(title, body);
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const opts = { body, tag, icon: 'icon.svg', badge: 'icon.svg', data: { url: location.href } };
+  const opts = { body, tag, icon: 'icon-192.png', badge: 'badge-96.png', data: { url: location.href } };
   try {
     const reg = await navigator.serviceWorker?.getRegistration();
     if (reg) return reg.showNotification(title, opts);
@@ -330,8 +330,69 @@ async function sendNotification(title, body, tag) {
   }
 }
 
+/* ---------- push (alerts while the app is closed) ---------- */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const push = { supported: false, publicKey: null };
+const permissionGranted = () => 'Notification' in window && Notification.permission === 'granted';
+
+async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const r = await (await fetch('/api/push/key')).json();
+    Object.assign(push, { supported: Boolean(r.enabled), publicKey: r.publicKey });
+  } catch { /* offline: keep in-page alerts */ }
+}
+
+function b64urlToBytes(s) {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (s.length % 4)) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+async function syncPush(confirm = false) {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription()
+    || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64urlToBytes(push.publicKey) });
+  const res = await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subscription: sub.toJSON(), buildings: notify.buildings, minSlots: notify.minSlots, confirm }),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+}
+
+async function stopPush() {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return;
+  await fetch('/api/push/unsubscribe', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }),
+  }).catch(() => {});
+  await sub.unsubscribe();
+}
+
+function onNotifyPrefsChange() {
+  saveNotify();
+  if (notify.enabled && notify.mode === 'push' && notify.buildings.length) syncPush().catch(() => {});
+  renderNotify();
+  checkAlerts();
+}
+
+// Re-register on every visit so the server learns the subscription again after a restart.
+async function resumePush() {
+  if (!notify.enabled || !push.supported || !permissionGranted() || !notify.buildings.length) return;
+  try {
+    await syncPush();
+    notify.mode = 'push';
+  } catch {
+    notify.mode = 'page';
+  }
+  saveNotify();
+  renderNotify();
+}
+
 async function checkAlerts() {
-  if (!notify.enabled) return;
+  if (!notify.enabled || notify.mode === 'push') return;
   const today = berlinNow().date;
   for (const building of notify.buildings) {
     let data = state.data;
@@ -360,30 +421,62 @@ function renderNotify() {
   const toggle = $('#notify-toggle');
   toggle.textContent = on ? 'Turn off' : 'Turn on';
   toggle.classList.toggle('off', on);
+  let status;
+  if (on && !notify.buildings.length) status = 'Choose at least one building.';
+  else if (on && notify.mode === 'push') status = 'Alerts arrive even when the app is closed.';
+  else if (isIOS && !isStandalone) status = 'On iPhone/iPad: tap Share → “Add to Home Screen”, open Room Finder from your Home Screen and turn alerts on there to get them while the app is closed.';
+  else if (push.supported && !on) status = 'Alerts arrive even when the app is closed.';
+  else status = 'Alerts appear only while this page is open.';
+  $('#notify-status').textContent = status;
   $$('input[name="watch-building"]').forEach((cb) => { cb.checked = notify.buildings.includes(cb.value); });
-  renderChips($('#watch-duration'), notify.minSlots, (v) => { notify.minSlots = v; saveNotify(); renderNotify(); });
+  renderChips($('#watch-duration'), notify.minSlots, (v) => { notify.minSlots = v; onNotifyPrefsChange(); });
 }
 
 async function toggleNotify() {
   if (notify.enabled) {
+    if (notify.mode === 'push') stopPush().catch(() => {});
     notify.enabled = false;
+    notify.mode = 'page';
     saveNotify();
     renderNotify();
     return;
   }
   if (!notify.buildings.length) notify.buildings = [state.building];
   if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+  notify.mode = 'page';
+  if (permissionGranted() && push.supported) {
+    try {
+      await syncPush(true);
+      notify.mode = 'push';
+    } catch (err) {
+      console.warn('Push subscription failed, using in-page alerts', err);
+    }
+  }
   notify.enabled = true;
   saveNotify();
   renderNotify();
   const where = notify.buildings.join(' & ');
-  if (!('Notification' in window) || Notification.permission !== 'granted') {
+  if (notify.mode === 'push') {
+    toast('Alerts on', `You'll get a notification when a room in ${where} frees up within ${SOON_MINUTES} minutes — even when the app is closed.`);
+  } else if (!permissionGranted()) {
     toast('Alerts on (in-page only)', 'Browser notifications are blocked or unsupported — alerts will appear here while this page is open.');
   } else {
-    sendNotification('Alerts on', `We'll tell you when a room in ${where} frees up within ${SOON_MINUTES} minutes.`, 'enabled');
+    sendNotification('Alerts on', `We'll tell you when a room in ${where} frees up within ${SOON_MINUTES} minutes while this page is open.`, 'enabled');
   }
   checkAlerts();
 }
+
+/* ---------- install ---------- */
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  $('#install-btn').hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  $('#install-btn').hidden = true;
+});
 
 /* ---------- init ---------- */
 function tick() {
@@ -430,11 +523,23 @@ function init() {
   $$('input[name="watch-building"]').forEach((cb) => {
     cb.onchange = () => {
       notify.buildings = $$('input[name="watch-building"]:checked').map((x) => x.value);
-      saveNotify();
-      checkAlerts();
+      onNotifyPrefsChange();
     };
   });
   renderNotify();
+  initPush().then(resumePush).then(renderNotify);
+
+  if (isIOS && !isStandalone) $('#install-btn').hidden = false;
+  $('#install-btn').onclick = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      $('#install-btn').hidden = true;
+    } else {
+      toast('Install on iPhone / iPad', 'In Safari, tap the Share button, then “Add to Home Screen”.');
+    }
+  };
 
   tick();
   setInterval(tick, 10_000);

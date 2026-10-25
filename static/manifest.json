@@ -1,9 +1,23 @@
 {
+  "id": "/",
   "name": "UB Heidelberg Room Finder",
   "short_name": "Room Finder",
+  "description": "See which group study rooms at UB Heidelberg are free, and get an alert 10 minutes before a room frees up.",
+  "lang": "en",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f6f7fb",
+  "background_color": "#f4f5fa",
   "theme_color": "#9b0d2a",
-  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Altstadt", "url": "/?building=Altstadt", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Neuenheim", "url": "/?building=Neuenheim", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
 }

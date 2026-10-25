@@ -4,10 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#9b0d2a">
+  <meta name="description" content="See which group study rooms at UB Heidelberg are free right now and get an alert 10 minutes before a room frees up.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Room Finder">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>UB Heidelberg Room Finder</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,6 +32,10 @@
       </div>
       <div class="hero-actions">
         <div class="clock"><span class="pulse" aria-hidden="true"></span><span class="sr-only">Time in Heidelberg: </span><span id="clock">--:--</span></div>
+        <button id="install-btn" class="bell ghost" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1ZM5 19h14a1 1 0 1 1 0 2H5a1 1 0 1 1 0-2Z"/></svg>
+          <span>Install app</span>
+        </button>
         <button id="notify-btn" class="bell" aria-expanded="false" aria-controls="notify-panel">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
           <span id="notify-label">Notify me</span>
@@ -47,7 +57,8 @@
       <div class="panel-head">
         <div>
           <h2 id="notify-title" tabindex="-1">Room alerts</h2>
-          <p class="muted">Get a notification when a room becomes free in the next 10 minutes. Keep this page open (or install it to your home screen).</p>
+          <p class="muted">Get a notification when a room becomes free in the next 10 minutes.</p>
+          <p class="notify-status" id="notify-status"></p>
         </div>
         <button id="notify-toggle" class="btn primary">Turn on</button>
       </div>
