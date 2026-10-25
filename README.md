@@ -12,7 +12,8 @@ Features:
 - **Room alerts**: click *Notify me* to get a browser notification when a room becomes free within the
   next 10 minutes (choose buildings and minimum free duration). Works while the page is open
   (desktop, Android; on iOS after "Add to Home Screen").
-- Light/dark mode, mobile-friendly, installable as a PWA
+- Settings panel: room alerts, Light / Dark / Auto theme, English / Deutsch (push alerts arrive in the chosen language)
+- Mobile-friendly, installable as a PWA
 
 Booking itself still happens on the official UB site (the "Book on UB site" button links there).
 
