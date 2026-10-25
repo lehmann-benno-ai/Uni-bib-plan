@@ -1,6 +1,6 @@
 # UB Heidelberg – Free Group Study Rooms
 
-Live: https://ub-room-finder.onrender.com (Render free tier; first load after idle can take ~30 s). Pushing to `main` redeploys automatically.
+Live: https://ub-room-finder.onrender.com (Render free tier; first load after idle can take ~30 s). Deploys are triggered via the Render API/dashboard (the repo is not connected to Render's GitHub app, so pushes do not auto-deploy).
 
 Unofficial website that shows which group study rooms (Gruppenarbeitsräume) at the
 [Universitätsbibliothek Heidelberg](https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume)
@@ -44,3 +44,17 @@ The site targets WCAG 2.2 AA:
 - Contrast checked in light and dark mode; respects `prefers-reduced-motion` and Windows high-contrast mode.
 
 Checked with axe-core 4.10 (wcag2a/aa, wcag21a/aa, wcag22aa, best-practice): 0 violations.
+
+## Install as an app & push alerts
+
+The site is an installable PWA (manifest, PNG/maskable/apple icons, offline app shell, "Install app" button).
+
+With `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` set (and `pip install -r requirements.txt`), the server stores push
+subscriptions in `$DATA_DIR/subscriptions.json`, checks availability every minute and sends a Web Push
+notification when a watched room frees up within 10 minutes — also while the app is closed. On iPhone this needs
+iOS 16.4+ and the app added to the Home Screen. Without keys the site falls back to in-page alerts.
+
+`KEEP_AWAKE_URL` makes the server ping itself while anyone has alerts on (Render's free tier otherwise sleeps
+after 15 idle minutes). Subscriptions are lost when the free instance restarts; the app re-registers on every visit.
+
+Tests: `python3 -m unittest tests.test_alerts`
