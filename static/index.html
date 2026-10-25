@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UB Heidelberg – Free Group Study Rooms</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>UB Heidelberg <span>Free group study rooms</span></h1>
+  </header>
+
+  <main>
+    <section class="controls">
+      <div class="seg" id="building">
+        <button data-building="Altstadt" class="active">Altstadt</button>
+        <button data-building="Neuenheim">Neuenheim</button>
+      </div>
+      <label>Date <input type="date" id="date"></label>
+      <label>I need
+        <select id="duration">
+          <option value="0">any time</option>
+          <option value="1">30 min</option>
+          <option value="2">1 h</option>
+          <option value="3">1.5 h</option>
+          <option value="4">2 h</option>
+          <option value="5">2.5 h</option>
+          <option value="6">3 h</option>
+        </select>
+      </label>
+      <a id="book" class="btn" target="_blank" rel="noopener">Book on UB site ↗</a>
+    </section>
+
+    <section id="now" class="card" hidden>
+      <h2>Free right now</h2>
+      <ul id="now-list"></ul>
+    </section>
+
+    <section class="card">
+      <div class="legend">
+        <span><i class="free"></i>free</span>
+        <span><i class="pending"></i>pre-booked (unconfirmed)</span>
+        <span><i class="booked"></i>booked</span>
+        <span><i class="closed"></i>closed</span>
+        <span><i class="fits"></i>fits your duration</span>
+      </div>
+      <div id="status"></div>
+      <div class="grid-wrap"><table id="grid"></table></div>
+    </section>
+  </main>
+
+  <footer>
+    Data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg room reservation system</a>, refreshed every minute. Unofficial site.
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
