@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script>(function(){try{var m=localStorage.getItem("theme"),g=localStorage.getItem("lang");if(m==="light"||m==="dark")document.documentElement.dataset.theme=m;if(g==="de"||g==="en")document.documentElement.lang=g;}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#9b0d2a">
   <meta name="description" content="See which group study rooms at UB Heidelberg are free right now and get an alert 10 minutes before a room frees up.">
@@ -17,75 +18,92 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to room availability</a>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to room availability</a>
   <header class="hero">
     <div class="hero-inner">
       <div class="brand">
         <img class="logo" src="icon.svg" alt="">
         <div>
           <h1>Room Finder</h1>
-          <p>Group study rooms · UB Heidelberg</p>
+          <p data-i18n="subtitle">Group study rooms · UB Heidelberg</p>
         </div>
       </div>
       <div class="hero-actions">
-        <div class="clock"><span class="pulse" aria-hidden="true"></span><span class="sr-only">Time in Heidelberg: </span><span id="clock">--:--</span></div>
+        <div class="clock"><span class="pulse" aria-hidden="true"></span><span class="sr-only" data-i18n="clockSr">Time in Heidelberg: </span><span id="clock">--:--</span></div>
         <button id="install-btn" class="bell ghost" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 1 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.42l3.3 3.3V4a1 1 0 0 1 1-1ZM5 19h14a1 1 0 1 1 0 2H5a1 1 0 1 1 0-2Z"/></svg>
-          <span>Install app</span>
+          <span data-i18n="install">Install app</span>
         </button>
         <button id="notify-btn" class="bell" aria-expanded="false" aria-controls="notify-panel">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
           <span id="notify-label">Notify me</span>
         </button>
+        <button id="settings-btn" class="bell ghost icon-btn" type="button" aria-expanded="false" aria-controls="notify-panel" aria-label="Settings" data-i18n-aria="settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.3.6.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96c.22.08.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>
+        </button>
       </div>
     </div>
 
     <div class="toolbar">
-      <div class="seg" id="building" role="group" aria-label="Library location">
+      <div class="seg" id="building" role="group" aria-label="Library location" data-i18n-aria="location">
         <button data-building="Altstadt">Altstadt</button>
         <button data-building="Neuenheim">Neuenheim</button>
       </div>
       <div class="days">
-        <button class="day-arrow" id="days-prev" type="button" aria-label="Show earlier days" aria-controls="dates"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.7 5.3a1 1 0 0 1 0 1.4L10.4 12l5.3 5.3a1 1 0 0 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0Z"/></svg></button>
-        <div class="chips" id="dates" role="group" aria-label="Day (swipe for more days)"></div>
-        <button class="day-arrow" id="days-next" type="button" aria-label="Show later days" aria-controls="dates"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8.3 5.3a1 1 0 0 1 1.4 0l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.4-1.4l5.3-5.3-5.3-5.3a1 1 0 0 1 0-1.4Z"/></svg></button>
+        <button class="day-arrow" id="days-prev" type="button" aria-label="Show earlier days" aria-controls="dates" data-i18n-aria="prevDays"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15.7 5.3a1 1 0 0 1 0 1.4L10.4 12l5.3 5.3a1 1 0 0 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0Z"/></svg></button>
+        <div class="chips" id="dates" role="group" aria-label="Day (swipe for more days)" data-i18n-aria="day"></div>
+        <button class="day-arrow" id="days-next" type="button" aria-label="Show later days" aria-controls="dates" data-i18n-aria="nextDays"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8.3 5.3a1 1 0 0 1 1.4 0l6 6a1 1 0 0 1 0 1.4l-6 6a1 1 0 0 1-1.4-1.4l5.3-5.3-5.3-5.3a1 1 0 0 1 0-1.4Z"/></svg></button>
       </div>
     </div>
   </header>
 
   <main id="main" tabindex="-1">
-    <section id="notify-panel" class="card panel" aria-labelledby="notify-title" hidden>
-      <div class="panel-head">
-        <div>
-          <h2 id="notify-title" tabindex="-1">Room alerts</h2>
-          <p class="muted">Get a notification when a room becomes free in the next 10 minutes.</p>
-          <p class="notify-status" id="notify-status"></p>
-        </div>
-        <button id="notify-toggle" class="btn primary">Turn on</button>
+    <section id="notify-panel" class="card panel" aria-labelledby="settings-title" hidden>
+      <div class="settings-head">
+        <h2 id="settings-title" tabindex="-1" data-i18n="settings">Settings</h2>
+        <button id="settings-close" class="close-btn" type="button" aria-label="Close settings" data-i18n-aria="close">×</button>
       </div>
-      <div class="panel-body">
-        <fieldset class="field">
-          <legend class="label">Buildings</legend>
-          <label class="check"><input type="checkbox" value="Altstadt" name="watch-building"> Altstadt</label>
-          <label class="check"><input type="checkbox" value="Neuenheim" name="watch-building"> Neuenheim</label>
-        </fieldset>
-        <div class="field">
-          <span class="label" id="watch-duration-label">Free for at least</span>
-          <div class="chips small" id="watch-duration" role="group" aria-labelledby="watch-duration-label"></div>
+      <div class="settings-group">
+        <div class="panel-head">
+          <div>
+            <h3 id="notify-title" tabindex="-1" data-i18n="alertsTitle">Room alerts</h3>
+            <p class="muted" data-i18n="alertsIntro">Get a notification when a room becomes free in the next 10 minutes.</p>
+            <p class="notify-status" id="notify-status"></p>
+          </div>
+          <button id="notify-toggle" class="btn primary">Turn on</button>
         </div>
+        <div class="panel-body">
+          <fieldset class="field">
+            <legend class="label" data-i18n="buildings">Buildings</legend>
+            <label class="check"><input type="checkbox" value="Altstadt" name="watch-building"> Altstadt</label>
+            <label class="check"><input type="checkbox" value="Neuenheim" name="watch-building"> Neuenheim</label>
+          </fieldset>
+          <div class="field">
+            <span class="label" id="watch-duration-label" data-i18n="freeAtLeast">Free for at least</span>
+            <div class="chips small" id="watch-duration" role="group" aria-labelledby="watch-duration-label"></div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-group">
+        <h3 id="theme-label" data-i18n="appearance">Appearance</h3>
+        <div class="settings-row"><div class="chips small" id="theme" role="group" aria-labelledby="theme-label"></div></div>
+      </div>
+      <div class="settings-group">
+        <h3 id="lang-label" data-i18n="language">Language</h3>
+        <div class="settings-row"><div class="chips small" id="lang" role="group" aria-labelledby="lang-label"></div></div>
       </div>
     </section>
 
-    <section class="stats" id="stats" aria-label="Summary"></section>
+    <section class="stats" id="stats" aria-label="Summary" data-i18n-aria="summary"></section>
 
     <section class="section">
       <div class="section-head">
-        <h2>Rooms</h2>
+        <h2 data-i18n="rooms">Rooms</h2>
         <div class="filter">
-          <span class="muted" id="duration-label">I need a room for</span>
+          <span class="muted" id="duration-label" data-i18n="needFor">I need a room for</span>
           <div class="chips small" id="duration" role="group" aria-labelledby="duration-label"></div>
         </div>
       </div>
@@ -95,25 +113,24 @@
 
     <section class="section">
       <div class="section-head">
-        <h2>Timeline</h2>
+        <h2 data-i18n="timeline">Timeline</h2>
         <div class="legend" aria-hidden="true">
-          <span><i class="free"></i>Free</span>
-          <span><i class="pending"></i>Pre-booked</span>
-          <span><i class="booked"></i>Booked</span>
-          <span><i class="closed"></i>Closed</span>
+          <span><i class="free"></i><span data-i18n="free">Free</span></span>
+          <span><i class="pending"></i><span data-i18n="pending">Pre-booked</span></span>
+          <span><i class="booked"></i><span data-i18n="booked">Booked</span></span>
+          <span><i class="closed"></i><span data-i18n="closed">Closed</span></span>
         </div>
       </div>
-      <div class="card grid-card"><div class="grid-wrap" tabindex="0" role="region" aria-label="Timeline of all rooms (scrollable)"><table id="grid"></table></div></div>
+      <div class="card grid-card"><div class="grid-wrap" tabindex="0" role="region" aria-label="Timeline of all rooms (scrollable)" data-i18n-aria="timelineRegion"><table id="grid"></table></div></div>
     </section>
   </main>
 
-  <footer>
-    Live data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg reservation system<span class="sr-only"> (opens in new tab)</span></a>, refreshed every minute.
-    Unofficial project — book on the <a id="book-footer" href="https://www.ub.uni-heidelberg.de/raumres/" target="_blank" rel="noopener">official site<span class="sr-only"> (opens in new tab)</span></a>.
+  <footer><p data-i18n-html="footer" style="margin:0">Live data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg reservation system<span class="sr-only"> (opens in new tab)</span></a>, refreshed every minute.
+    Unofficial project — book on the <a id="book-footer" href="https://www.ub.uni-heidelberg.de/raumres/" target="_blank" rel="noopener">official site<span class="sr-only"> (opens in new tab)</span></a>.</p>
   </footer>
 
   <div id="toasts" role="status" aria-live="polite"></div>
   <div id="announce" class="sr-only" aria-live="polite"></div>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

@@ -26,7 +26,7 @@
   --radius: 18px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0b0f1a;
     --surface: #131a2a;
     --surface-2: #1a2236;
@@ -45,6 +45,27 @@
     --booked-text: #fb7185;
   }
 }
+:root[data-theme="dark"] {
+    --bg: #0b0f1a;
+    --surface: #131a2a;
+    --surface-2: #1a2236;
+    --border: #243049;
+    --text: #e8ecf5;
+    --muted: #94a3b8;
+    --free-soft: rgba(16, 185, 129, .16);
+    --soon-soft: rgba(14, 165, 233, .16);
+    --booked-soft: rgba(244, 63, 94, .14);
+    --closed: #334155;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    --link: #fb7185;
+    --focus: #93c5fd;
+    --free-text: #34d399;
+    --soon-text: #38bdf8;
+    --booked-text: #fb7185;
+  }
+:root { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 html, body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-width: 100%; }
@@ -96,6 +117,13 @@ legend { padding: 0; float: left; margin-right: 10px; }
 .bell.ghost { background: rgba(255, 255, 255, .14); color: #fff; box-shadow: none; outline: 1px solid rgba(255, 255, 255, .45); outline-offset: -1px; }
 [hidden] { display: none !important; }
 .notify-status { margin: 8px 0 0; font-size: .9rem; font-weight: 600; }
+.icon-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
+.settings-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.settings-head h2 { margin: 0; font-size: 1.2rem; }
+.close-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); font-size: 1.2rem; line-height: 1; padding: 0; }
+.settings-group { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; }
+.settings-group h3 { margin: 0 0 4px; font-size: 1rem; }
+.settings-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 10px; }
 .bell svg { width: 18px; height: 18px; fill: currentColor; }
 .bell.on { background: #4ade80; color: #052e16; }
 

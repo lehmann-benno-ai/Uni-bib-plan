@@ -64,6 +64,17 @@ class CheckAlertsTest(unittest.TestCase):
         self.assertEqual(payload["title"], "W3.3 is free in 8 min")
         self.assertIn("18:00–19:00", payload["body"])
 
+    def test_german_payload(self):
+        data = make_data(TIMES, [[B, B, F, F, B]], rooms=["W3.3"])
+        server.store.upsert(self.sub, ["Altstadt"], 0, lang="de")
+        now = datetime(2026, 10, 25, 17, 52, tzinfo=server.TZ)
+        with mock.patch.object(server, "get_availability", return_value=data), \
+             mock.patch.object(server, "send_push", return_value=True) as send:
+            server.check_alerts(now)
+        payload = send.call_args.args[2]
+        self.assertEqual(payload["title"], "W3.3 ist in 8 Min. frei")
+        self.assertIn("frei 18:00–19:00", payload["body"])
+
     def test_validates_push_endpoints(self):
         self.assertTrue(server.valid_subscription(self.sub))
         self.assertTrue(server.valid_subscription({**self.sub, "endpoint": "https://web.push.apple.com/abc"}))

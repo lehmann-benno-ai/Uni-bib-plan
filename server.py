@@ -152,6 +152,26 @@ def fmt_duration(slots, step=30):
     return f"{h} h{' 30' if m % 60 else ''}" if h else f"{m} min"
 
 
+TEXTS = {
+    "en": {
+        "alert_title": "{room} is free in {minutes} min",
+        "alert_body": "{building} · free {start}–{end} ({duration})",
+        "on_title": "Alerts are on",
+        "on_body": "We'll tell you when a room in {where} frees up within {soon} minutes — even when the app is closed.",
+    },
+    "de": {
+        "alert_title": "{room} ist in {minutes} Min. frei",
+        "alert_body": "{building} · frei {start}–{end} ({duration})",
+        "on_title": "Alarme sind an",
+        "on_body": "Wir sagen dir Bescheid, wenn in {where} innerhalb von {soon} Minuten ein Raum frei wird – auch bei geschlossener App.",
+    },
+}
+
+
+def text(lang, key, **kw):
+    return TEXTS.get(lang, TEXTS["en"])[key].format(**kw)
+
+
 def valid_subscription(sub):
     if not isinstance(sub, dict) or not isinstance(sub.get("keys"), dict):
         return False
@@ -181,7 +201,7 @@ class SubscriptionStore:
             json.dump(self.subs, f)
         os.replace(tmp, self.path)
 
-    def upsert(self, sub, buildings, min_slots, sent=None):
+    def upsert(self, sub, buildings, min_slots, sent=None, lang="en"):
         with self.lock:
             old = self.subs.get(sub["endpoint"], {})
             if not old and len(self.subs) >= MAX_SUBSCRIPTIONS:
@@ -190,6 +210,7 @@ class SubscriptionStore:
                 "subscription": {"endpoint": sub["endpoint"], "keys": {k: sub["keys"][k] for k in ("p256dh", "auth")}},
                 "buildings": buildings,
                 "min_slots": min_slots,
+                "lang": lang,
                 "sent": sent if sent is not None else old.get("sent", []),
             }
             self._save()
@@ -268,9 +289,11 @@ def check_alerts(now=None):
                 key = f"{today}|{building}|{r['room']}|{r['from']}"
                 if key in rec["sent"] or key in new_keys:
                     continue
+                lang = rec.get("lang", "en")
                 ok = send_push(endpoint, rec["subscription"], {
-                    "title": f"{r['room']} is free in {r['minutes']} min",
-                    "body": f"{building} · free {r['from']}–{r['to']} ({fmt_duration(r['slots'])})",
+                    "title": text(lang, "alert_title", room=r["room"], minutes=r["minutes"]),
+                    "body": text(lang, "alert_body", building=building, start=r["from"], end=r["to"],
+                                 duration=fmt_duration(r["slots"])),
                     "tag": key,
                     "url": f"/?building={building}",
                 })
@@ -343,15 +366,16 @@ class Handler(SimpleHTTPRequestHandler):
         sub = body.get("subscription")
         buildings = [b for b in body.get("buildings") or [] if b in BUILDINGS]
         min_slots = body.get("minSlots", 0)
+        lang = body.get("lang") if body.get("lang") in TEXTS else "en"
         if not valid_subscription(sub) or not buildings or not isinstance(min_slots, int) or not 0 <= min_slots <= 24:
             return self.send_json({"error": "invalid subscription or settings"}, 400)
         is_new = store.get(sub["endpoint"]) is None
-        if not store.upsert(sub, buildings, min_slots):
+        if not store.upsert(sub, buildings, min_slots, lang=lang):
             return self.send_json({"error": "too many subscriptions"}, 503)
         if is_new and body.get("confirm"):
             threading.Thread(target=send_push, daemon=True, args=(sub["endpoint"], sub, {
-                "title": "Alerts are on",
-                "body": f"We'll tell you when a room in {' & '.join(buildings)} frees up within {SOON_MINUTES} minutes — even when the app is closed.",
+                "title": text(lang, "on_title"),
+                "body": text(lang, "on_body", where=" & ".join(buildings), soon=SOON_MINUTES),
                 "tag": "enabled",
             })).start()
         return self.send_json({"ok": True})
@@ -367,7 +391,7 @@ class Handler(SimpleHTTPRequestHandler):
         if not valid_subscription(sub) or not old:
             return self.send_json({"error": "unknown subscription"}, 400)
         store.remove(body["oldEndpoint"])
-        store.upsert(sub, old["buildings"], old["min_slots"], old["sent"])
+        store.upsert(sub, old["buildings"], old["min_slots"], old["sent"], old.get("lang", "en"))
         return self.send_json({"ok": True})
 
     def api_availability(self, qs):
