@@ -4,7 +4,7 @@ const SOON_MINUTES = 10;
 const REFRESH_MS = 60_000;
 const BUILDINGS = ['Altstadt', 'Neuenheim'];
 const DURATIONS = [[0, 'Any'], [1, '30 min'], [2, '1 h'], [3, '1.5 h'], [4, '2 h'], [6, '3 h']];
-const svg = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const svg = (d) => `<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const ICON = {
   free: svg('<path d="M20 6 9 17l-5-5"/>'),
   soon: svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>'),
@@ -46,6 +46,7 @@ const state = {
   date: params.get('date') || berlinNow().date,
   duration: Number(params.get('duration') || 0),
   data: null,
+  announce: false,
 };
 
 const notify = Object.assign(
@@ -128,7 +129,9 @@ function renderDates() {
     const b = document.createElement('button');
     b.className = 'chip' + (d === state.date ? ' active' : '');
     b.textContent = label;
-    b.onclick = () => { state.date = d; renderDates(); load(); };
+    b.setAttribute('aria-pressed', String(d === state.date));
+    b.setAttribute('aria-label', new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }) + (i < 2 ? ` (${label})` : ''));
+    b.onclick = () => { state.date = d; state.announce = true; renderDates(); el.querySelector('.active')?.focus(); load(); };
     el.appendChild(b);
   }
   el.querySelector('.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -140,7 +143,8 @@ function renderChips(el, value, onPick) {
     const b = document.createElement('button');
     b.className = 'chip' + (v === value ? ' active' : '');
     b.textContent = label;
-    b.onclick = () => onPick(v);
+    b.setAttribute('aria-pressed', String(v === value));
+    b.onclick = () => { onPick(v); el.querySelector('.active')?.focus(); };
     el.appendChild(b);
   }
 }
@@ -149,10 +153,35 @@ function render() {
   const data = state.data;
   if (!data) return;
   const sum = summarize(data, state.duration);
+  const focusKey = document.activeElement?.dataset?.key;
   renderStats(data, sum);
   renderRooms(data, sum);
   renderGrid(data, sum);
   $('#book-footer').href = data.booking_url;
+  if (focusKey) document.querySelector(`[data-key="${CSS.escape(focusKey)}"]`)?.focus();
+  if (state.announce) {
+    state.announce = false;
+    announce(describe(data, sum));
+  }
+}
+
+function describe(data, sum) {
+  const day = sum.isToday ? 'today' : new Date(data.date + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+  const need = state.duration ? ` for at least ${fmtDuration(state.duration)}` : '';
+  const open = sum.rooms.filter((r) => !r.allClosed).length;
+  if (!data.slots.length) return `${data.building}, ${day}: no bookable slots.`;
+  if (sum.isToday) {
+    const now = sum.rooms.filter((r) => r.freeNow).length;
+    const soon = sum.rooms.filter((r) => r.soon).length;
+    return `${data.building}, ${day}: ${now} of ${open} rooms free now${need}, ${soon} more within ${SOON_MINUTES} minutes.`;
+  }
+  return `${data.building}, ${day}: ${sum.rooms.filter((r) => r.next).length} of ${sum.rooms.length} rooms have free time${need}.`;
+}
+
+function announce(text) {
+  const el = $('#announce');
+  el.textContent = '';
+  setTimeout(() => { el.textContent = text; }, 50);
 }
 
 function statCard(icon, cls, value, label) {
@@ -207,12 +236,14 @@ function renderRooms(data, sum) {
   el.innerHTML = rooms.map((r) => {
     const v = roomView(r, sum);
     const bar = r.cells.map((c, i) => `<i class="${c}${i === sum.currentIdx ? ' now' : ''}"></i>`).join('');
-    const tags = r.features.tags.map((t) => `<span class="tag">${t}</span>`).join('') + (r.features.accessible ? '<span class="tag" title="Barrier-free">♿</span>' : '');
-    return `<article class="card room ${v.cls}${r.allClosed ? ' dim' : ''}">
-      <div class="room-top"><span class="room-name">${esc(r.name)}</span><span class="badge ${v.badge[0]}">${v.badge[1]}</span></div>
-      <div class="room-main">${v.main}${v.sub ? `<small>${v.sub}</small>` : ''}</div>
-      <div class="bar" title="${esc(data.slots[0]?.time || '')} – ${esc(fromMin(toMin(data.slots.at(-1)?.time || '00:00') + data.slot_minutes))}">${bar}</div>
-      <div class="room-foot"><div class="tags">${tags}</div>${r.next ? `<a class="book" href="${esc(data.booking_url)}" target="_blank" rel="noopener">Book ↗</a>` : ''}</div>
+    const tags = r.features.tags.map((t) => `<span class="tag">${t}</span>`).join('')
+      + (r.features.accessible ? '<span class="tag"><span aria-hidden="true">♿ </span>Barrier-free</span>' : '');
+    const id = `room-${r.j}`;
+    return `<article class="card room ${v.cls}${r.allClosed ? ' dim' : ''}" aria-labelledby="${id}">
+      <div class="room-top"><h3 class="room-name" id="${id}">${esc(r.name)}</h3><span class="badge ${v.badge[0]}">${v.badge[1]}</span></div>
+      <p class="room-main">${v.main}${v.sub ? `<small>${v.sub}</small>` : ''}</p>
+      <div class="bar" aria-hidden="true">${bar}</div>
+      <div class="room-foot"><div class="tags" aria-label="Equipment">${tags}</div>${r.next ? `<a class="book" data-key="book-${esc(r.name)}" href="${esc(data.booking_url)}" target="_blank" rel="noopener" aria-label="Book ${esc(r.name)} on the UB website (opens in new tab)">Book <span aria-hidden="true">↗</span></a>` : ''}</div>
     </article>`;
   }).join('');
 }
@@ -221,25 +252,27 @@ function renderGrid(data, sum) {
   const grid = $('#grid');
   grid.innerHTML = '';
   const step = data.slot_minutes;
-  grid.createTHead().insertRow().innerHTML = '<th class="time"></th>' + data.rooms.map((r) => `<th>${esc(r)}</th>`).join('');
+  grid.createCaption().outerHTML = `<caption class="sr-only">Availability of every room in ${esc(data.building)} by half-hour slot</caption>`;
+  grid.createTHead().insertRow().innerHTML = '<th class="time" scope="col"><span class="sr-only">Time</span></th>' + data.rooms.map((r) => `<th scope="col">${esc(r)}</th>`).join('');
   const tbody = grid.createTBody();
   data.slots.forEach((slot, i) => {
     const tr = tbody.insertRow();
     if (i === sum.currentIdx) tr.className = 'current';
-    tr.insertCell().outerHTML = `<td class="time">${esc(slot.time)}</td>`;
+    tr.insertCell().outerHTML = `<th class="time" scope="row">${esc(slot.time)}${i === sum.currentIdx ? '<span class="sr-only"> (now)</span>' : ''}</th>`;
     slot.cells.forEach((cell, j) => {
       const td = tr.insertCell();
       const { runAhead, blockLen } = sum.info[j];
-      let title = `${data.rooms[j]} ${slot.time}–${fromMin(toMin(slot.time) + step)}: ${LABELS[cell.state] || cell.state}`;
+      let label = LABELS[cell.state] || cell.state;
       let cls = cell.state;
       if (cell.state === 'free') {
-        title += ` (until ${fromMin(toMin(slot.time) + runAhead[i] * step)})`;
-        if (state.duration && blockLen[i] < state.duration) cls += ' dim';
+        label += ` until ${fromMin(toMin(slot.time) + runAhead[i] * step)}`;
+        if (state.duration && blockLen[i] < state.duration) { cls += ' dim'; label += ' (too short)'; }
       } else if (cell.from && cell.to && cell.state !== 'closed') {
-        title += ` (${cell.from}–${cell.to})`;
+        label += ` ${cell.from}–${cell.to}`;
       }
       td.className = cls;
-      td.title = title;
+      td.title = `${data.rooms[j]} ${slot.time}: ${label}`;
+      td.innerHTML = `<span class="sr-only">${esc(label)}</span>`;
     });
   });
 }
@@ -272,9 +305,16 @@ async function load() {
 function toast(title, body) {
   const el = document.createElement('div');
   el.className = 'toast';
-  el.innerHTML = `<b>${esc(title)}</b><span>${esc(body)}</span>`;
+  el.innerHTML = `<b>${esc(title)}</b><span>${esc(body)}</span><button type="button" aria-label="Dismiss notification">×</button>`;
+  el.querySelector('button').onclick = () => el.remove();
   $('#toasts').appendChild(el);
-  setTimeout(() => el.remove(), 8000);
+  let timer = setTimeout(() => el.remove(), 12_000);
+  const pause = () => clearTimeout(timer);
+  const resume = () => { timer = setTimeout(() => el.remove(), 4_000); };
+  el.addEventListener('mouseenter', pause);
+  el.addEventListener('focusin', pause);
+  el.addEventListener('mouseleave', resume);
+  el.addEventListener('focusout', resume);
 }
 
 async function sendNotification(title, body, tag) {
@@ -356,6 +396,7 @@ function init() {
   renderDates();
   const pickDuration = (v) => {
     state.duration = v;
+    state.announce = true;
     syncUrl();
     renderChips($('#duration'), v, pickDuration);
     render();
@@ -363,19 +404,28 @@ function init() {
   renderChips($('#duration'), state.duration, pickDuration);
 
   $$('#building button').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.building === state.building);
+    const sync = () => $$('#building button').forEach((b) => {
+      b.classList.toggle('active', b.dataset.building === state.building);
+      b.setAttribute('aria-pressed', String(b.dataset.building === state.building));
+    });
+    sync();
     btn.onclick = () => {
       state.building = btn.dataset.building;
-      $$('#building button').forEach((b) => b.classList.toggle('active', b === btn));
+      state.announce = true;
+      sync();
       load();
     };
   });
 
-  $('#notify-btn').onclick = () => {
-    const panel = $('#notify-panel');
-    panel.hidden = !panel.hidden;
-    $('#notify-btn').setAttribute('aria-expanded', String(!panel.hidden));
+  const setPanel = (open) => {
+    $('#notify-panel').hidden = !open;
+    $('#notify-btn').setAttribute('aria-expanded', String(open));
+    if (open) $('#notify-title').focus();
   };
+  $('#notify-btn').onclick = () => setPanel($('#notify-panel').hidden);
+  $('#notify-panel').addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { setPanel(false); $('#notify-btn').focus(); }
+  });
   $('#notify-toggle').onclick = toggleNotify;
   $$('input[name="watch-building"]').forEach((cb) => {
     cb.onchange = () => {

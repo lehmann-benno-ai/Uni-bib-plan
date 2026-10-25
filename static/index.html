@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to room availability</a>
   <header class="hero">
     <div class="hero-inner">
       <div class="brand">
@@ -24,53 +25,53 @@
         </div>
       </div>
       <div class="hero-actions">
-        <div class="clock"><span class="pulse"></span><span id="clock">--:--</span></div>
-        <button id="notify-btn" class="bell" aria-expanded="false">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+        <div class="clock"><span class="pulse" aria-hidden="true"></span><span class="sr-only">Time in Heidelberg: </span><span id="clock">--:--</span></div>
+        <button id="notify-btn" class="bell" aria-expanded="false" aria-controls="notify-panel">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
           <span id="notify-label">Notify me</span>
         </button>
       </div>
     </div>
 
     <div class="toolbar">
-      <div class="seg" id="building" role="tablist">
+      <div class="seg" id="building" role="group" aria-label="Library location">
         <button data-building="Altstadt">Altstadt</button>
         <button data-building="Neuenheim">Neuenheim</button>
       </div>
-      <div class="chips" id="dates"></div>
+      <div class="chips" id="dates" role="group" aria-label="Day"></div>
     </div>
   </header>
 
-  <main>
-    <section id="notify-panel" class="card panel" hidden>
+  <main id="main" tabindex="-1">
+    <section id="notify-panel" class="card panel" aria-labelledby="notify-title" hidden>
       <div class="panel-head">
         <div>
-          <h2>Room alerts</h2>
+          <h2 id="notify-title" tabindex="-1">Room alerts</h2>
           <p class="muted">Get a notification when a room becomes free in the next 10 minutes. Keep this page open (or install it to your home screen).</p>
         </div>
         <button id="notify-toggle" class="btn primary">Turn on</button>
       </div>
       <div class="panel-body">
-        <div class="field">
-          <span class="label">Buildings</span>
+        <fieldset class="field">
+          <legend class="label">Buildings</legend>
           <label class="check"><input type="checkbox" value="Altstadt" name="watch-building"> Altstadt</label>
           <label class="check"><input type="checkbox" value="Neuenheim" name="watch-building"> Neuenheim</label>
-        </div>
+        </fieldset>
         <div class="field">
-          <span class="label">Free for at least</span>
-          <div class="chips small" id="watch-duration"></div>
+          <span class="label" id="watch-duration-label">Free for at least</span>
+          <div class="chips small" id="watch-duration" role="group" aria-labelledby="watch-duration-label"></div>
         </div>
       </div>
     </section>
 
-    <section class="stats" id="stats"></section>
+    <section class="stats" id="stats" aria-label="Summary"></section>
 
     <section class="section">
       <div class="section-head">
         <h2>Rooms</h2>
         <div class="filter">
-          <span class="muted">I need</span>
-          <div class="chips small" id="duration"></div>
+          <span class="muted" id="duration-label">I need a room for</span>
+          <div class="chips small" id="duration" role="group" aria-labelledby="duration-label"></div>
         </div>
       </div>
       <div id="status" class="status"></div>
@@ -80,23 +81,24 @@
     <section class="section">
       <div class="section-head">
         <h2>Timeline</h2>
-        <div class="legend">
+        <div class="legend" aria-hidden="true">
           <span><i class="free"></i>Free</span>
           <span><i class="pending"></i>Pre-booked</span>
           <span><i class="booked"></i>Booked</span>
           <span><i class="closed"></i>Closed</span>
         </div>
       </div>
-      <div class="card grid-card"><div class="grid-wrap"><table id="grid"></table></div></div>
+      <div class="card grid-card"><div class="grid-wrap" tabindex="0" role="region" aria-label="Timeline of all rooms (scrollable)"><table id="grid"></table></div></div>
     </section>
   </main>
 
   <footer>
-    Live data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg reservation system</a>, refreshed every minute.
-    Unofficial project — book on the <a id="book-footer" href="https://www.ub.uni-heidelberg.de/raumres/" target="_blank" rel="noopener">official site</a>.
+    Live data from the <a href="https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume" target="_blank" rel="noopener">UB Heidelberg reservation system<span class="sr-only"> (opens in new tab)</span></a>, refreshed every minute.
+    Unofficial project — book on the <a id="book-footer" href="https://www.ub.uni-heidelberg.de/raumres/" target="_blank" rel="noopener">official site<span class="sr-only"> (opens in new tab)</span></a>.
   </footer>
 
-  <div id="toasts" aria-live="polite"></div>
+  <div id="toasts" role="status" aria-live="polite"></div>
+  <div id="announce" class="sr-only" aria-live="polite"></div>
   <script src="app.js"></script>
 </body>
 </html>

@@ -30,3 +30,15 @@ The official booking page (`/raumres/`) loads its data from a public JSON endpoi
 That endpoint sends no CORS headers, so `server.py` proxies it (cached for 60 s), simplifies the
 response, and serves it at `/api/availability?building=...&date=...`. The frontend in `static/`
 renders a room × time grid, a "free right now" list, and a filter for how long you need a room.
+
+## Accessibility
+
+The site targets WCAG 2.2 AA:
+
+- Skip link, visible keyboard focus, and Escape closes the alerts panel.
+- Toggle buttons expose `aria-pressed`; chip groups and the timeline table have labels, captions and row/column headers.
+- Each timeline cell has a screen-reader text (e.g. "Free until 18:00"). Booked and pre-booked slots use stripes/dots too, so colour is never the only cue.
+- Changing building, day or duration announces a short summary through a live region; alerts appear in a live region too and can be dismissed.
+- Contrast checked in light and dark mode; respects `prefers-reduced-motion` and Windows high-contrast mode.
+
+Checked with axe-core 4.10 (wcag2a/aa, wcag21a/aa, wcag22aa, best-practice): 0 violations.
