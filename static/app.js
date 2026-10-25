@@ -503,6 +503,11 @@ function onNotifyPrefsChange() {
 
 // Re-register on every visit so the server learns the subscription again after a restart.
 async function resumePush() {
+  if (notify.enabled && notify.mode === 'push' && !permissionGranted()) {
+    notify.mode = 'page';
+    saveNotify();
+    return;
+  }
   if (!notify.enabled || !push.supported || !permissionGranted() || !notify.buildings.length) return;
   try {
     await syncPush();
