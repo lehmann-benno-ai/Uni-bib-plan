@@ -1,5 +1,7 @@
 # UB Heidelberg – Free Group Study Rooms
 
+Live: https://ub-room-finder.onrender.com (Render free tier; first load after idle can take ~30 s). Pushing to `main` redeploys automatically.
+
 Unofficial website that shows which group study rooms (Gruppenarbeitsräume) at the
 [Universitätsbibliothek Heidelberg](https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume)
 are free, and when — for both **Altstadt** and **Neuenheim**, up to 14 days ahead.
