@@ -44,7 +44,14 @@ MAX_BODY = 8192
 PUSH_HOSTS = ("fcm.googleapis.com", "jmt17.google.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com")
 
 _cache = {}
+_failures = {}
 _cache_lock = threading.Lock()
+FAIL_TTL = 20  # after an upstream failure, don't retry the same day for this many seconds
+STALE_TTL = 30 * 60  # serve last good data this long while upstream is failing
+
+
+class UpstreamError(Exception):
+    pass
 
 
 def classify(states):
@@ -97,10 +104,27 @@ def get_availability(building, day):
         hit = _cache.get(key)
         if hit and now - hit[0] < CACHE_TTL:
             return hit[1]
-    data = normalize(fetch_upstream(building, day), building, day)
+        failed = _failures.get(key)
+    if failed and now - failed < FAIL_TTL:
+        return _stale_or_raise(hit, now, "upstream recently failed")
+    try:
+        data = normalize(fetch_upstream(building, day), building, day)
+    except Exception as exc:
+        with _cache_lock:
+            _failures[key] = now
+        print(f"upstream error for {building} {day}: {type(exc).__name__}: {exc}", flush=True)
+        return _stale_or_raise(hit, now, exc)
     with _cache_lock:
         _cache[key] = (now, data)
+        _failures.pop(key, None)
     return data
+
+
+def _stale_or_raise(hit, now, reason):
+    # UB's API sometimes answers with an empty/non-JSON body; keep showing the last good data for a while
+    if hit and now - hit[0] < STALE_TTL:
+        return {**hit[1], "stale": True}
+    raise UpstreamError(str(reason))
 
 
 def to_min(hhmm):
@@ -414,7 +438,10 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # client gave up waiting
 
 
 def main():

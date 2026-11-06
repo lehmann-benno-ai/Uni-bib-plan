@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import time
 import unittest
 from datetime import datetime
 from unittest import mock
@@ -19,6 +20,30 @@ def make_data(times, columns, rooms=None):
 
 
 TIMES = ["17:00", "17:30", "18:00", "18:30", "19:00"]
+
+
+class UpstreamFailureTest(unittest.TestCase):
+    RAW = {"rooms": [{"name": "R0"}], "slots": [{"hour_min": "17:00", "time_rooms": [{"state": ["could_new"]}]}]}
+
+    def setUp(self):
+        server._cache.clear()
+        server._failures.clear()
+
+    def test_serves_stale_data_when_upstream_breaks(self):
+        with mock.patch.object(server, "fetch_upstream", return_value=self.RAW):
+            good = server.get_availability("Altstadt", "2026-11-06")
+        server._cache[("Altstadt", "2026-11-06")] = (time.time() - server.CACHE_TTL - 1, good)
+        with mock.patch.object(server, "fetch_upstream", side_effect=ValueError("Expecting value")) as up:
+            data = server.get_availability("Altstadt", "2026-11-06")
+            again = server.get_availability("Altstadt", "2026-11-06")
+        self.assertTrue(data["stale"] and again["stale"])
+        self.assertEqual(data["rooms"], ["R0"])
+        self.assertEqual(up.call_count, 1)  # failure is remembered, upstream not hammered
+
+    def test_raises_without_cached_data(self):
+        with mock.patch.object(server, "fetch_upstream", side_effect=ValueError("Expecting value")):
+            with self.assertRaises(server.UpstreamError):
+                server.get_availability("Neuenheim", "2026-11-06")
 
 
 class RoomsFreeSoonTest(unittest.TestCase):
