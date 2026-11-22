@@ -1,5 +1,8 @@
-const CACHE = 'room-finder-v5';
-const SHELL = ['/', '/style.css', '/app.js', '/manifest.json', '/icon.svg', '/icon-192.png', '/badge-96.png'];
+const CACHE = 'room-finder-v6';
+const SCOPE = self.registration.scope;
+const HOME = new URL('./', SCOPE).href;
+const API = location.hostname.endsWith('.github.io') ? 'https://ub-room-finder.onrender.com' : '';
+const SHELL = ['./', 'style.css', 'app.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'badge-96.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
@@ -16,17 +19,17 @@ self.addEventListener('activate', (event) => {
 // Network first for the app shell (so updates show up immediately), cache as offline fallback.
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
+  if (event.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith(new URL('api/', SCOPE).pathname)) return;
   event.respondWith((async () => {
     try {
       const res = await fetch(event.request, { cache: 'no-cache' });
       if (res.ok) {
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(event.request.mode === 'navigate' ? '/' : event.request, copy));
+        caches.open(CACHE).then((c) => c.put(event.request.mode === 'navigate' ? HOME : event.request, copy));
       }
       return res;
     } catch (err) {
-      const hit = await caches.match(event.request.mode === 'navigate' ? '/' : event.request, { ignoreSearch: true });
+      const hit = await caches.match(event.request.mode === 'navigate' ? HOME : event.request, { ignoreSearch: true });
       if (hit) return hit;
       throw err;
     }
@@ -40,20 +43,20 @@ self.addEventListener('push', (event) => {
     body: msg.body || '',
     tag: msg.tag,
     renotify: Boolean(msg.tag),
-    icon: '/icon-192.png',
-    badge: '/badge-96.png',
-    data: { url: msg.url || '/' },
+    icon: 'icon-192.png',
+    badge: 'badge-96.png',
+    data: { url: new URL(msg.url || './', SCOPE).href },
   }));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
+  const url = event.notification.data?.url || HOME;
   event.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of all) {
       if ('focus' in c) {
-        if ('navigate' in c && url !== '/') c.navigate(url).catch(() => {});
+        if ('navigate' in c && url !== HOME) c.navigate(url).catch(() => {});
         return c.focus();
       }
     }
@@ -65,9 +68,9 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('pushsubscriptionchange', (event) => {
   event.waitUntil((async () => {
     let key = event.oldSubscription?.options?.applicationServerKey;
-    if (!key) key = (await (await fetch('/api/push/key')).json()).publicKey;
+    if (!key) key = (await (await fetch(API + '/api/push/key')).json()).publicKey;
     const sub = event.newSubscription || await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
-    await fetch('/api/push/resubscribe', {
+    await fetch(API + '/api/push/resubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ oldEndpoint: event.oldSubscription?.endpoint, subscription: sub.toJSON() }),

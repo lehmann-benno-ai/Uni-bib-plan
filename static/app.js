@@ -143,6 +143,8 @@ function applyTheme() {
 }
 
 /* ---------- persistent state ---------- */
+// The GitHub Pages copy has no backend of its own; it uses the API of the Render server.
+const API = location.hostname.endsWith('.github.io') ? 'https://ub-room-finder.onrender.com' : '';
 const params = new URLSearchParams(location.search);
 const state = {
   building: BUILDINGS.includes(params.get('building')) ? params.get('building') : 'Altstadt',
@@ -402,7 +404,7 @@ function renderGrid(data, sum) {
 
 /* ---------- data loading ---------- */
 async function fetchData(building, date) {
-  const res = await fetch(`/api/availability?building=${encodeURIComponent(building)}&date=${encodeURIComponent(date)}`);
+  const res = await fetch(`${API}/api/availability?building=${encodeURIComponent(building)}&date=${encodeURIComponent(date)}`);
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || res.statusText);
   return json;
@@ -462,7 +464,7 @@ const permissionGranted = () => 'Notification' in window && Notification.permiss
 async function initPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
-    const r = await (await fetch('/api/push/key')).json();
+    const r = await (await fetch(API + '/api/push/key')).json();
     Object.assign(push, { supported: Boolean(r.enabled), publicKey: r.publicKey });
   } catch { /* offline: keep in-page alerts */ }
 }
@@ -476,7 +478,7 @@ async function syncPush(confirm = false) {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription()
     || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64urlToBytes(push.publicKey) });
-  const res = await fetch('/api/push/subscribe', {
+  const res = await fetch(API + '/api/push/subscribe', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subscription: sub.toJSON(), buildings: notify.buildings, minSlots: notify.minSlots, lang, confirm }),
@@ -488,7 +490,7 @@ async function stopPush() {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
   if (!sub) return;
-  await fetch('/api/push/unsubscribe', {
+  await fetch(API + '/api/push/unsubscribe', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }),
   }).catch(() => {});
   await sub.unsubscribe();
