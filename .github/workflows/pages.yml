@@ -1,9 +1,10 @@
-name: Deploy frontend to GitHub Pages
+name: Publish site and room data to GitHub Pages
 
 on:
   push:
     branches: [main]
-    paths: ["static/**", ".github/workflows/pages.yml"]
+  schedule:
+    - cron: "*/10 * * * *"  # GitHub runs this roughly every 10-20 minutes
   workflow_dispatch:
 
 permissions:
@@ -13,7 +14,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -23,9 +24,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: actions/configure-pages@v5
+      - run: cp -r static _site && python3 scripts/build_pages_data.py _site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: static
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

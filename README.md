@@ -2,9 +2,10 @@
 
 Live: https://ub-room-finder.onrender.com (Render free tier; first load after idle can take ~30 s). Deploys are triggered via the Render API/dashboard (the repo is not connected to Render's GitHub app, so pushes do not auto-deploy).
 
-Also on GitHub Pages: https://lehmann-benno-ai.github.io/Uni-bib-plan/ — `.github/workflows/pages.yml` publishes `static/` on every push to `main`
-(needs Settings → Pages → Source: **GitHub Actions**). That copy has no backend of its own: it calls the Render server's API,
-which allows it via CORS (`ALLOWED_ORIGINS`, default `https://lehmann-benno-ai.github.io`).
+Also on GitHub Pages (free, no server): https://lehmann-benno-ai.github.io/Uni-bib-plan/ — `.github/workflows/pages.yml`
+runs every ~10 minutes, fetches the UB data with `scripts/build_pages_data.py` and publishes it next to `static/` as
+`rooms/<building>/<date>.json` (needs Settings → Pages → Source: **GitHub Actions**). There, data is up to ~10–20 min old
+and alerts only work while the app is open (no push alerts without a server).
 
 Unofficial website that shows which group study rooms (Gruppenarbeitsräume) at the
 [Universitätsbibliothek Heidelberg](https://www.ub.uni-heidelberg.de/de/service/lsa/gruppenarbeitsraeume)

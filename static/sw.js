@@ -1,7 +1,6 @@
 const CACHE = 'room-finder-v6';
 const SCOPE = self.registration.scope;
 const HOME = new URL('./', SCOPE).href;
-const API = location.hostname.endsWith('.github.io') ? 'https://ub-room-finder.onrender.com' : '';
 const SHELL = ['./', 'style.css', 'app.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'badge-96.png'];
 
 self.addEventListener('install', (event) => {
@@ -68,9 +67,9 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('pushsubscriptionchange', (event) => {
   event.waitUntil((async () => {
     let key = event.oldSubscription?.options?.applicationServerKey;
-    if (!key) key = (await (await fetch(API + '/api/push/key')).json()).publicKey;
+    if (!key) key = (await (await fetch('/api/push/key')).json()).publicKey;
     const sub = event.newSubscription || await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
-    await fetch(API + '/api/push/resubscribe', {
+    await fetch('/api/push/resubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ oldEndpoint: event.oldSubscription?.endpoint, subscription: sub.toJSON() }),

@@ -67,7 +67,7 @@ const I18N = {
     bookAria: (r) => `Book ${r} on the UB website (opens in new tab)`,
     caption: (b) => `Availability of every room in ${b} by half-hour slot`, time: 'Time', nowSr: ' (now)',
     until: (x) => ` until ${x}`, tooShort: ' (too short)',
-    updated: (b, tm) => `${b} · updated ${tm}`, loadError: (m) => `Could not load data: ${m}`, dismiss: 'Dismiss notification',
+    updated: (b, tm) => `${b} · updated ${tm}`, loadError: (m) => `Could not load data: ${m}`, noData: 'not published yet, try again in a few minutes', dismiss: 'Dismiss notification',
     alertTitle: (r, m) => `${r} is free in ${m} min`, alertBody: (b, f, to, d) => `${b} · free ${f}–${to} (${d})`,
     chooseBuilding: 'Choose at least one building.', pushOn: 'Alerts arrive even when the app is closed.',
     iosHint: 'On iPhone/iPad: tap Share → “Add to Home Screen”, open Room Finder from your Home Screen and turn alerts on there to get them while the app is closed.',
@@ -107,7 +107,7 @@ const I18N = {
     book: 'Buchen', bookAria: (r) => `${r} auf der UB-Website buchen (öffnet in neuem Tab)`,
     caption: (b) => `Belegung aller Räume in ${b} pro halbe Stunde`, time: 'Uhrzeit', nowSr: ' (jetzt)',
     until: (x) => ` bis ${x}`, tooShort: ' (zu kurz)',
-    updated: (b, tm) => `${b} · aktualisiert ${tm}`, loadError: (m) => `Daten konnten nicht geladen werden: ${m}`,
+    updated: (b, tm) => `${b} · aktualisiert ${tm}`, loadError: (m) => `Daten konnten nicht geladen werden: ${m}`, noData: 'noch nicht veröffentlicht, bitte in ein paar Minuten erneut versuchen',
     dismiss: 'Benachrichtigung schließen',
     alertTitle: (r, m) => `${r} ist in ${m} Min. frei`, alertBody: (b, f, to, d) => `${b} · frei ${f}–${to} (${d})`,
     chooseBuilding: 'Wähle mindestens einen Standort.', pushOn: 'Alarme kommen auch, wenn die App geschlossen ist.',
@@ -143,8 +143,8 @@ function applyTheme() {
 }
 
 /* ---------- persistent state ---------- */
-// The GitHub Pages copy has no backend of its own; it uses the API of the Render server.
-const API = location.hostname.endsWith('.github.io') ? 'https://ub-room-finder.onrender.com' : '';
+// The GitHub Pages copy has no server: a scheduled workflow publishes the data as static JSON (rooms/<building>/<date>.json).
+const STATIC_DATA = location.hostname.endsWith('.github.io');
 const params = new URLSearchParams(location.search);
 const state = {
   building: BUILDINGS.includes(params.get('building')) ? params.get('building') : 'Altstadt',
@@ -404,7 +404,12 @@ function renderGrid(data, sum) {
 
 /* ---------- data loading ---------- */
 async function fetchData(building, date) {
-  const res = await fetch(`${API}/api/availability?building=${encodeURIComponent(building)}&date=${encodeURIComponent(date)}`);
+  if (STATIC_DATA) {
+    const res = await fetch(`rooms/${encodeURIComponent(building)}/${encodeURIComponent(date)}.json`, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(res.status === 404 ? t('noData') : res.statusText);
+    return res.json();
+  }
+  const res = await fetch(`/api/availability?building=${encodeURIComponent(building)}&date=${encodeURIComponent(date)}`);
   const json = await res.json();
   if (!res.ok) throw new Error(json.error || res.statusText);
   return json;
@@ -462,9 +467,9 @@ const push = { supported: false, publicKey: null };
 const permissionGranted = () => 'Notification' in window && Notification.permission === 'granted';
 
 async function initPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (STATIC_DATA || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
   try {
-    const r = await (await fetch(API + '/api/push/key')).json();
+    const r = await (await fetch('/api/push/key')).json();
     Object.assign(push, { supported: Boolean(r.enabled), publicKey: r.publicKey });
   } catch { /* offline: keep in-page alerts */ }
 }
@@ -478,7 +483,7 @@ async function syncPush(confirm = false) {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription()
     || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64urlToBytes(push.publicKey) });
-  const res = await fetch(API + '/api/push/subscribe', {
+  const res = await fetch('/api/push/subscribe', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ subscription: sub.toJSON(), buildings: notify.buildings, minSlots: notify.minSlots, lang, confirm }),
@@ -490,7 +495,7 @@ async function stopPush() {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
   if (!sub) return;
-  await fetch(API + '/api/push/unsubscribe', {
+  await fetch('/api/push/unsubscribe', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }),
   }).catch(() => {});
   await sub.unsubscribe();

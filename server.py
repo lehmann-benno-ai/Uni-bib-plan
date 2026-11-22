@@ -41,9 +41,6 @@ SUBSCRIPTIONS_FILE = os.path.join(os.environ.get("DATA_DIR", os.path.join(BASE_D
 KEEP_AWAKE_URL = os.environ.get("KEEP_AWAKE_URL", "")
 MAX_SUBSCRIPTIONS = 5000
 MAX_BODY = 8192
-# Other sites allowed to call /api/* from the browser (the GitHub Pages copy of the frontend).
-ALLOWED_ORIGINS = {o.strip().rstrip("/") for o in os.environ.get(
-    "ALLOWED_ORIGINS", "https://lehmann-benno-ai.github.io").split(",") if o.strip()}
 PUSH_HOSTS = ("fcm.googleapis.com", "jmt17.google.com", "push.services.mozilla.com", "push.apple.com", "notify.windows.com")
 
 _cache = {}
@@ -322,7 +319,7 @@ def check_alerts(now=None):
                     "body": text(lang, "alert_body", building=building, start=r["from"], end=r["to"],
                                  duration=fmt_duration(r["slots"])),
                     "tag": key,
-                    "url": f"?building={building}",
+                    "url": f"/?building={building}",
                 })
                 if not ok:
                     break
@@ -365,20 +362,7 @@ class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         if not self.path.startswith("/api/"):
             self.send_header("Cache-Control", "no-cache")
-        elif self.headers.get("Origin", "").rstrip("/") in ALLOWED_ORIGINS:
-            self.send_header("Access-Control-Allow-Origin", self.headers["Origin"])
-            self.send_header("Vary", "Origin")
         super().end_headers()
-
-    def do_OPTIONS(self):
-        if not self.path.startswith("/api/") or self.headers.get("Origin", "").rstrip("/") not in ALLOWED_ORIGINS:
-            return self.send_json({"error": "not found"}, 404)
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Methods", "GET, POST")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Access-Control-Max-Age", "86400")
-        self.send_header("Content-Length", "0")
-        self.end_headers()
 
     def do_POST(self):
         routes = {
